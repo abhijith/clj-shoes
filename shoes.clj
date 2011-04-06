@@ -3,12 +3,16 @@
   (:import (javax.swing Box JButton JFrame JLabel JPanel JTextField JOptionPane JScrollPane JList ImageIcon JComboBox JSeparator JTable UIManager SwingUtilities AbstractButton JFileChooser JDialog JProgressBar JTabbedPane BoxLayout))
   (:import (javax.swing.table AbstractTableModel))
   (:import (java.awt.event MouseAdapter MouseListener KeyEvent))
-  (:import (java.awt Toolkit BorderLayout Dimension Color Dialog$ModalityType)))
+  (:import (java.awt Toolkit BorderLayout Dimension Color Dialog$ModalityType))
+  (:use (cxr.swing [dialog :only (debug)]))
+  (:use (clojure.contrib
+         [swing-utils :only (add-action-listener)])))
+
 
 (defn flow
   [& args]
   (let [ panel (JPanel.)
-         layout (BoxLayout. panel BoxLayout/X_AXIS)]
+        layout (BoxLayout. panel BoxLayout/X_AXIS)]
     (doto panel
       (.setComponentOrientation java.awt.ComponentOrientation/RIGHT_TO_LEFT)
       (.setLayout layout))
@@ -20,7 +24,7 @@
 (defn stack
   [& args]
   (let [ panel (JPanel.)
-         layout (BoxLayout. panel BoxLayout/Y_AXIS) ]
+        layout (BoxLayout. panel BoxLayout/Y_AXIS) ]
     (doto panel
       (.setLayout layout))
     (doseq [x  args]
@@ -32,17 +36,23 @@
   (JLabel. txt))
 
 (defn button
-  [label]
-  (JButton. label))
+  ([label & {:keys [handler]}]
+     (let [btn (JButton. label)]
+       (add-action-listener btn handler)
+       btn))
+  ([label]
+     (JButton. label)))
 
 (defn -main
   []
   (let [frame (JFrame. "shoes!")
         panel (stack
                (para "basic para")
-               (flow (button "1") (button "2"))
-               (flow (button "3") (button "4")))
-               ]
+               (flow (button "1" :handler (fn [event]
+                                            (JOptionPane/showMessageDialog
+                                             (JPanel.) (str "Button " (.getActionCommand event) " clicked."))))
+                     (button "2"))
+               (flow (button "3") (button "4")))]
     (doto frame
       (.setLocation 300 180)
       (.add panel)
