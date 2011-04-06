@@ -10,12 +10,10 @@
   (let [ panel (JPanel.)
          layout (BoxLayout. panel BoxLayout/X_AXIS)]
     (doto panel
-      (.add (JButton. "tu"))
       (.setComponentOrientation java.awt.ComponentOrientation/RIGHT_TO_LEFT)
       (.setLayout layout))
     (doseq [x  args]
-      (.add panel x)
-      )
+      (.add panel x))
     (.add panel (Box/createHorizontalGlue))
     panel))
 
@@ -29,16 +27,24 @@
       (.add panel x))
     panel))
 
-(defn main
+(defn para
+  [txt]
+  (JLabel. txt))
+
+(defn button
+  [label]
+  (JButton. label))
+
+(defn -main
   []
-  (let [ frame (JFrame. "border example")
+  (let [frame (JFrame. "shoes!")
         panel (stack
-               (flow (JButton. "wah") (JButton. "weh"))
-               (flow (JButton. "wah") (JButton. "weh")))              
+               (para "basic para")
+               (flow (button "1") (button "2"))
+               (flow (button "3") (button "4")))
                ]
     (doto frame
       (.setLocation 300 180)
-      ;(.setPreferredSize (Dimension. 800 600))
       (.add panel)
       (.pack)
       (.setVisible true))))
