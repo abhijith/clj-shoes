@@ -35,6 +35,10 @@
   [txt]
   (JLabel. txt))
 
+(defn background
+  [component color]
+  (.setBackground component color))
+
 (defn button
   ([label & {:keys [handler]}]
      (let [btn (JButton. label)]
@@ -43,16 +47,20 @@
   ([label]
      (JButton. label)))
 
+(defn- button-handler
+  [event]
+  (JOptionPane/showMessageDialog
+   (JPanel.) (str "Button " (.getActionCommand event) " clicked.")))
+
 (defn -main
   []
   (let [frame (JFrame. "shoes!")
         panel (stack
                (para "basic para")
-               (flow (button "1" :handler (fn [event]
-                                            (JOptionPane/showMessageDialog
-                                             (JPanel.) (str "Button " (.getActionCommand event) " clicked."))))
+               (flow (button "1" :handler button-handler)
                      (button "2"))
                (flow (button "3") (button "4")))]
+    (background panel Color/RED)
     (doto frame
       (.setLocation 300 180)
       (.add panel)
