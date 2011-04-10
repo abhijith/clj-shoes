@@ -6,6 +6,7 @@
   (:import (java.awt Toolkit BorderLayout Dimension Color Dialog$ModalityType))
   (:use (cxr.swing [dialog :only (debug)]))
   (:use (clojure.contrib
+         [string :only (as-str)]
          [swing-utils :only (add-action-listener)])))
 
 
@@ -40,25 +41,30 @@
   (.setBackground component color))
 
 (defn button
-  ([label & {:keys [handler]}]
+  ([label f & args]
      (let [btn (JButton. label)]
-       (add-action-listener btn handler)
+       (apply add-action-listener btn f args)
        btn))
   ([label]
      (JButton. label)))
 
-(defn- button-handler
+(defn- type1-handler
   [event]
   (JOptionPane/showMessageDialog
    (JPanel.) (str "Button " (.getActionCommand event) " clicked.")))
+
+(defn- type2-handler
+  [event & args]
+  (JOptionPane/showMessageDialog
+   (JPanel.) (apply as-str args)))
 
 (defn -main
   []
   (let [frame (JFrame. "shoes!")
         panel (stack
                (para "basic para")
-               (flow (button "1" :handler button-handler)
-                     (button "2"))
+               (flow (button "1" type1-handler)
+                     (button "2" type2-handler :a :s :d :f))
                (flow (button "3") (button "4")))]
     (background panel Color/RED)
     (doto frame
