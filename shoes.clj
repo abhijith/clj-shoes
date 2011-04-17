@@ -4,7 +4,6 @@
   (:import (javax.swing.table AbstractTableModel))
   (:import (java.awt.event MouseAdapter MouseListener KeyEvent))
   (:import (java.awt Toolkit BorderLayout Dimension Color Dialog$ModalityType))
-  (:use (cxr.swing [dialog :only (debug)]))
   (:use (clojure.contrib
          [string :only (as-str)]
          [swing-utils :only (add-action-listener)])))
