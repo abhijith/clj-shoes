@@ -57,17 +57,83 @@
   (JOptionPane/showMessageDialog
    (JPanel.) (apply as-str args)))
 
+(defn frame
+  ([panel & [{:keys [title] :or {title "woah!"}}]]
+     (doto (JFrame. title)
+       (.add panel))))
+
+(defn info
+  [x msg]
+  (JOptionPane/showMessageDialog
+   (JPanel.) (str x msg)))
+
+(def running (ref true))
+
+(defn progress-bar
+  [coll f & args]
+  (let [cnt (count coll)
+        pb (JProgressBar. 0 cnt)
+        task-agent (agent {:start 0 :end cnt :current 0 })]
+    (add-watch task-agent :task-agent
+               (fn [k r o n]
+                 (doto pb
+                   (.setValue (:current n))
+                   (.setString (str (:current n)))
+                   (.setStringPainted true))))
+    (letfn [(task-fn
+             [agent-val lst task-args]
+             (if (and @running
+                      (not (empty? lst)))
+               (do 
+                 (apply f (first lst) task-args)
+                 (Thread/sleep 100)
+                 (send *agent* task-fn (rest lst) task-args)
+                 (merge-with + agent-val {:current 1})) agent-val))]
+      (send task-agent task-fn coll args))
+    [pb task-agent]))
+
 (defn -main
   []
-  (let [frame (JFrame. "shoes!")
-        panel (stack
+  (let [panel (stack
                (para "basic para")
                (flow (button "1" type1-handler)
                      (button "2" type2-handler :a :s :d :f))
                (flow (button "3") (button "4")))]
     (background panel Color/RED)
-    (doto frame
-      (.setLocation 300 180)
-      (.add panel)
+    (doto (frame panel :title "demo")
       (.pack)
-      (.setVisible true))))
+      (.setVisible true)
+      (.setLocationRelativeTo nil))))
+
+
+(defn progress-example-type1
+  []
+  (dosync (ref-set running true))
+  (let [[pb agent] (progress-bar (range 0 10) info "compeleted")
+         stop-button (button "stop")
+         panel (flow pb stop-button)]
+    (doto (frame panel)
+      (.pack)
+      (.setVisible true))
+    (add-action-listener stop-button (fn [_](dosync (ref-set running false))))
+    agent))
+
+(def data (agent 0))
+
+(defn progress-example-type2
+  [x]
+  (send data + x))
+
+(defn adder
+  []
+  (dosync (ref-set running true))
+  (let [[pb agent] (progress-bar (range 0 100) add)
+         stop-button (button "stop")
+         panel (flow pb stop-button)]
+    (doto (frame panel)
+      (.pack)
+      (.setVisible true))
+    (add-action-listener stop-button (fn [_](dosync (ref-set running false))))
+    agent))
+
+
