@@ -127,7 +127,7 @@
 (defn adder
   []
   (dosync (ref-set running true))
-  (let [[pb agent] (progress-bar (range 0 100) add)
+  (let [[pb agent] (progress-bar (range 0 100) progress-example-type2)
          stop-button (button "stop")
          panel (flow pb stop-button)]
     (doto (frame panel)
