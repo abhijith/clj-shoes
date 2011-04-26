@@ -139,7 +139,7 @@
 ;; can currently only apply a fn if something is chosen. What if I want to run something if cancelled?
 ;; Approach/theme for the library probably should be given a better thought.
 (defn ask-open-dir
-  [event parent f & args]
+  [parent f & args]
   (let [chooser (JFileChooser.)]
     (.setFileSelectionMode chooser JFileChooser/DIRECTORIES_ONLY)
     (let [ ret (.showOpenDialog chooser parent)]
