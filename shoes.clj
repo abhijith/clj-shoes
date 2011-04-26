@@ -68,6 +68,11 @@
 
 (def running (ref true))
 
+;; initializer for progress bar? this would probably be required to support (fn [args] ...   {:element "something"})
+;; otherwise the first element would be treated specially - for example
+;; (defn info [x msg] (JOptionPane/showMessageDialog (JPanel.) (str x msg)) {:element ""})
+;; would still display the first element since the progress bar has no idea that I don't want to display anything
+
 (defn progress-bar
   [coll f & args]
   (let [cnt (count coll)
@@ -85,11 +90,12 @@
              [agent-val lst task-args]
              (if (and @running
                       (not (empty? lst)))
-               (do 
-                 (apply f (first lst) task-args)
-                 (Thread/sleep 1000)
-                 (send *agent* task-fn (rest lst) task-args)
-                 (assoc (merge-with + agent-val {:current 1}) :element (first (rest lst))))agent-val))]
+               (do
+                 (let [{:keys [current element] :or {current 1 element (first (rest lst))}}
+                       (apply f (first lst) task-args)]
+                   (Thread/sleep 1000)
+                   (send *agent* task-fn (rest lst) task-args)
+                   (assoc (merge-with + agent-val {:current current}) :element element))) agent-val))]
       (send task-agent task-fn coll args))
     [pb task-agent]))
 
@@ -123,7 +129,8 @@
 
 (defn adder
   [x]
-  (send data + x))
+  (send data + x)
+  {})
 
 (defn progress-example-type2
   []
