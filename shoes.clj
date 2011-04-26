@@ -119,11 +119,11 @@
 
 (def data (agent 0))
 
-(defn progress-example-type2
+(defn adder
   [x]
   (send data + x))
 
-(defn adder
+(defn progress-example-type1
   []
   (dosync (ref-set running true))
   (let [[pb agent] (progress-bar (range 0 100) progress-example-type2)
