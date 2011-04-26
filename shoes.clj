@@ -72,12 +72,13 @@
   [coll f & args]
   (let [cnt (count coll)
         pb (JProgressBar. 0 cnt)
-        task-agent (agent {:start 0 :end cnt :current 0 })]
+        task-agent (agent {:start 0 :end cnt :current 0 :element (first coll)})]
+    (.setString pb (str (first coll)))
     (add-watch task-agent :task-agent
                (fn [k r o n]
                  (doto pb
                    (.setValue (:current n))
-                   (.setString (str (:current n)))
+                   (.setString (str (:element n)))
                    (.setStringPainted true))))
     (letfn [(task-fn
              [agent-val lst task-args]
@@ -87,7 +88,7 @@
                  (apply f (first lst) task-args)
                  (Thread/sleep 100)
                  (send *agent* task-fn (rest lst) task-args)
-                 (merge-with + agent-val {:current 1})) agent-val))]
+                 (assoc (merge-with + agent-val {:current 1}) :element (first (rest lst))))agent-val))]
       (send task-agent task-fn coll args))
     [pb task-agent]))
 
@@ -108,7 +109,7 @@
 (defn progress-example-type1
   []
   (dosync (ref-set running true))
-  (let [[pb agent] (progress-bar (range 0 10) info "compeleted")
+  (let [[pb agent] (progress-bar [:a :b :c :d :e :f :g :h] info "completed")
          stop-button (button "stop")
          panel (flow pb stop-button)]
     (doto (frame panel)
