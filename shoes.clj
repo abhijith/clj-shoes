@@ -62,9 +62,12 @@
        (.add panel))))
 
 (defn info
-  [x msg]
+  ([x msg]
   (JOptionPane/showMessageDialog
    (JPanel.) (str x msg)))
+  ([msg]
+     (JOptionPane/showMessageDialog
+      (JPanel.) (str msg))))
 
 (def running (ref true))
 
@@ -77,7 +80,7 @@
   [coll f & args]
   (let [cnt (count coll)
         pb (JProgressBar. 0 cnt)
-        task-agent (agent {:start 0 :end cnt :current 0 :element (first coll)})]
+        task-agent (agent {:start 0 :end cnt :current 0 :element (first coll) :determinate true})]
     (doto pb
       (.setString (str (first coll)))
       (.setStringPainted true))
@@ -155,3 +158,92 @@
        (= JFileChooser/APPROVE_OPTION ret) (apply f chooser args)
        (= JFileChooser/CANCEL_OPTION ret) nil
        :else :error))))
+
+;; use protocols or generic functions?
+(defn progress-bar
+  [coll f & args]
+  (let [cnt (count coll)
+        pb (JProgressBar. 0 cnt)
+        task-agent (agent {:start 0 :end cnt :current 0 :element (first coll)})]
+    (doto pb
+      (.setString (str (first coll)))
+      (.setStringPainted true))
+    (add-watch task-agent :task-agent
+               (fn [k r o n]
+                 (doto pb
+                   (.setValue (:current n))
+                   (.setString (str (:element n))))))
+    (letfn [(task-fn
+             [agent-val lst task-args]
+             (if (and @running
+                      (not (empty? lst)))
+               (do
+                 (let [{:keys [current element] :or {current 1 element (first (rest lst))}}
+                       (apply f (first lst) task-args)]
+                   (Thread/sleep 1000)
+                   (send *agent* task-fn (rest lst) task-args)
+                   (assoc (merge-with + agent-val {:current current}) :element element))) agent-val))]
+      (send task-agent task-fn coll args))
+    [pb task-agent]))
+
+(defn progress-bar
+  [pb coll f & args]
+  (let [cnt (count coll)
+        task-agent (agent {:start 0 :end cnt :current 0 :element (first coll)})]
+    (doto pb
+      (.setMaximum cnt)
+      (.setIndeterminate false)
+      (.setString (str (first coll)))
+      (.setStringPainted true))
+    (add-watch task-agent :task-agent
+               (fn [k r o n]
+                 (doto pb
+                   (.setValue (:current n))
+                   (.setString (str (:element n))))))
+    (letfn [(task-fn
+             [agent-val lst task-args]
+             (if (and @running
+                      (not (empty? lst)))
+               (do
+                 (let [{:keys [current element] :or {current 1 element (first (rest lst))}}
+                       (apply f (first lst) task-args)]
+                   (Thread/sleep 1000)
+                   (send *agent* task-fn (rest lst) task-args)
+                   (assoc (merge-with + agent-val {:current current}) :element element))) agent-val))]
+      (send task-agent task-fn coll args))
+    [pb task-agent]))
+
+(defn indeterminate-progress-bar
+  [[indeterminate-fn & indeterminate-args] [determinate-fn & determinate-args]]
+  (let [pb (JProgressBar.)
+        indeterminate-agent (agent nil)]
+    (doto pb
+      (.setIndeterminate true)
+      (.setString "wah")
+      (.setStringPainted true))
+    (send indeterminate-agent (fn [a args] (apply indeterminate-fn args)) indeterminate-args)
+    (add-watch indeterminate-agent :indeterminate-agent
+               (fn [k r o n]
+                 (if (coll? n)
+                   (progress-bar pb n determinate-fn determinate-args)
+                   (doto pb
+                     (.setString "wah")))))
+    [pb indeterminate-agent]))
+
+
+(defn ind-fn
+  [msecs]
+  (Thread/sleep msecs)
+  (range 0 100))
+
+(defn type3
+  []
+  (dosync (ref-set running true))
+  (let [[pb agent] (indeterminate-progress-bar [ind-fn 3000] [info ""])
+         stop-button (button "stop")
+         panel (flow pb stop-button)]
+    (doto (frame panel)
+      (.pack)
+      (.setVisible true))
+    (add-action-listener stop-button (fn [_](dosync (ref-set running false))))
+    agent))
