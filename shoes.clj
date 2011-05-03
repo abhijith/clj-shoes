@@ -186,7 +186,7 @@
       (send task-agent task-fn coll args))
     [pb task-agent]))
 
-(defn progress-bar
+(defn progress-bar-helper
   [pb coll f & args]
   (let [cnt (count coll)
         task-agent (agent {:start 0 :end cnt :current 0 :element (first coll)})]
@@ -225,7 +225,7 @@
     (add-watch indeterminate-agent :indeterminate-agent
                (fn [k r o n]
                  (if (coll? n)
-                   (progress-bar pb n determinate-fn determinate-args)
+                   (progress-bar-helper pb n determinate-fn determinate-args)
                    (doto pb
                      (.setString "wah")))))
     [pb indeterminate-agent]))
