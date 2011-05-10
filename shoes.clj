@@ -163,28 +163,8 @@
 (defn progress-bar
   [coll f & args]
   (let [cnt (count coll)
-        pb (JProgressBar. 0 cnt)
-        task-agent (agent {:start 0 :end cnt :current 0 :element (first coll)})]
-    (doto pb
-      (.setString (str (first coll)))
-      (.setStringPainted true))
-    (add-watch task-agent :task-agent
-               (fn [k r o n]
-                 (doto pb
-                   (.setValue (:current n))
-                   (.setString (str (:element n))))))
-    (letfn [(task-fn
-             [agent-val lst task-args]
-             (if (and @running
-                      (not (empty? lst)))
-               (do
-                 (let [{:keys [current element] :or {current 1 element (first (rest lst))}}
-                       (apply f (first lst) task-args)]
-                   (Thread/sleep 1000)
-                   (send *agent* task-fn (rest lst) task-args)
-                   (assoc (merge-with + agent-val {:current current}) :element element))) agent-val))]
-      (send task-agent task-fn coll args))
-    [pb task-agent]))
+        pb (JProgressBar.)]
+    (apply add-progress-listener pb coll f args)))
 
 (defn add-progress-listener
   [pb coll f & args]
