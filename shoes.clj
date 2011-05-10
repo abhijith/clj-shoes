@@ -71,17 +71,13 @@
 
 (def running (ref true))
 
-;; initializer for progress bar? this would probably be required to support (fn [args] ...   {:element "something"})
-;; otherwise the first element would be treated specially - for example
-;; (defn info [x msg] (JOptionPane/showMessageDialog (JPanel.) (str x msg)) {:element ""})
-;; would still display the first element since the progress bar has no idea that I don't want to display anything
-
-(defn progress-bar
-  [coll f & args]
+(defn add-progress-listener
+  [pb coll f & args]
   (let [cnt (count coll)
-        pb (JProgressBar. 0 cnt)
-        task-agent (agent {:start 0 :end cnt :current 0 :element (first coll) :determinate true})]
+        task-agent (agent {:start 0 :end cnt :current 0 :element (first coll)})]
     (doto pb
+      (.setMaximum cnt)
+      (.setIndeterminate false)
       (.setString (str (first coll)))
       (.setStringPainted true))
     (add-watch task-agent :task-agent
@@ -102,6 +98,18 @@
       (send task-agent task-fn coll args))
     [pb task-agent]))
 
+;; initializer for progress bar? this would probably be required to support (fn [args] ...   {:element "something"})
+;; otherwise the first element would be treated specially - for example
+;; (defn info [x msg] (JOptionPane/showMessageDialog (JPanel.) (str x msg)) {:element ""})
+;; would still display the first element since the progress bar has no idea that I don't want to display anything
+
+;; use protocols or generic functions?
+(defn progress-bar
+  [coll f & args]
+  (let [cnt (count coll)
+        pb (JProgressBar.)]
+    (apply add-progress-listener pb coll f args)))
+
 (defn -main
   []
   (let [panel (stack
@@ -114,7 +122,6 @@
       (.pack)
       (.setVisible true)
       (.setLocationRelativeTo nil))))
-
 
 (defn progress-example-type1
   []
@@ -159,40 +166,6 @@
        (= JFileChooser/CANCEL_OPTION ret) nil
        :else :error))))
 
-;; use protocols or generic functions?
-(defn progress-bar
-  [coll f & args]
-  (let [cnt (count coll)
-        pb (JProgressBar.)]
-    (apply add-progress-listener pb coll f args)))
-
-(defn add-progress-listener
-  [pb coll f & args]
-  (let [cnt (count coll)
-        task-agent (agent {:start 0 :end cnt :current 0 :element (first coll)})]
-    (doto pb
-      (.setMaximum cnt)
-      (.setIndeterminate false)
-      (.setString (str (first coll)))
-      (.setStringPainted true))
-    (add-watch task-agent :task-agent
-               (fn [k r o n]
-                 (doto pb
-                   (.setValue (:current n))
-                   (.setString (str (:element n))))))
-    (letfn [(task-fn
-             [agent-val lst task-args]
-             (if (and @running
-                      (not (empty? lst)))
-               (do
-                 (let [{:keys [current element] :or {current 1 element (first (rest lst))}}
-                       (apply f (first lst) task-args)]
-                   (Thread/sleep 1000)
-                   (send *agent* task-fn (rest lst) task-args)
-                   (assoc (merge-with + agent-val {:current current}) :element element))) agent-val))]
-      (send task-agent task-fn coll args))
-    [pb task-agent]))
-
 (defn indeterminate-progress-bar
   [[indeterminate-fn & indeterminate-args] [determinate-fn & determinate-args]]
   (let [pb (JProgressBar.)
@@ -209,7 +182,6 @@
                    (doto pb
                      (.setString "wah")))))
     [pb indeterminate-agent]))
-
 
 (defn ind-fn
   [msecs]
@@ -239,3 +211,11 @@
       (.setVisible true))
     (add-action-listener stop-button (fn [_](dosync (ref-set running false))))
     (add-progress-listener pb (range 10 20) info "")))
+
+(defn test-all
+  []
+  (-main)
+  (type3)
+  (add-progress-listener-example)
+  (progress-example-type1)
+  (progress-example-type2))
