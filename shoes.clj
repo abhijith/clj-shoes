@@ -186,7 +186,7 @@
       (send task-agent task-fn coll args))
     [pb task-agent]))
 
-(defn progress-bar-helper
+(defn add-progress-listener
   [pb coll f & args]
   (let [cnt (count coll)
         task-agent (agent {:start 0 :end cnt :current 0 :element (first coll)})]
@@ -225,7 +225,7 @@
     (add-watch indeterminate-agent :indeterminate-agent
                (fn [k r o n]
                  (if (coll? n)
-                   (progress-bar-helper pb n determinate-fn determinate-args)
+                   (add-progress-listener pb n determinate-fn determinate-args)
                    (doto pb
                      (.setString "wah")))))
     [pb indeterminate-agent]))
@@ -247,3 +247,15 @@
       (.setVisible true))
     (add-action-listener stop-button (fn [_](dosync (ref-set running false))))
     agent))
+
+(defn add-progress-listener-example
+  []
+  (dosync (ref-set running true))
+  (let [pb (JProgressBar.)
+        stop-button (button "stop")
+        panel (flow pb stop-button)]
+    (doto (frame panel)
+      (.pack)
+      (.setVisible true))
+    (add-action-listener stop-button (fn [_](dosync (ref-set running false))))
+    (add-progress-listener pb (range 10 20) info "")))
