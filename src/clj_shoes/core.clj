@@ -1,6 +1,6 @@
-(ns shoes
+(ns clj-shoes.core
   (:import (java.awt FlowLayout Container Dimension Component))
-  (:import (javax.swing Box JButton JFrame JLabel JPanel JTextField JOptionPane JScrollPane JList ImageIcon JComboBox JSeparator JTable UIManager SwingUtilities AbstractButton JFileChooser JDialog JProgressBar JTabbedPane BoxLayout))
+  (:import (javax.swing Box BoxLayout JButton JFrame JLabel JPanel JOptionPane JDialog JFileChooser JProgressBar))
   (:import (javax.swing.table AbstractTableModel))
   (:import (java.awt.event MouseAdapter MouseListener KeyEvent))
   (:import (java.awt Toolkit BorderLayout Dimension Color Dialog$ModalityType))
@@ -46,16 +46,6 @@
   ([label]
      (JButton. label)))
 
-(defn- type1-handler
-  [event]
-  (JOptionPane/showMessageDialog
-   (JPanel.) (str "Button " (.getActionCommand event) " clicked.")))
-
-(defn- type2-handler
-  [event & args]
-  (JOptionPane/showMessageDialog
-   (JPanel.) (apply as-str args)))
-
 (defn frame
   ([panel & [{:keys [title] :or {title "woah!"}}]]
      (doto (JFrame. title)
@@ -68,8 +58,6 @@
   ([msg]
      (JOptionPane/showMessageDialog
       (JPanel.) (str msg))))
-
-(def running (ref true))
 
 (defn add-progress-listener
   [pb coll f & args]
@@ -110,50 +98,6 @@
         pb (JProgressBar.)]
     (apply add-progress-listener pb coll f args)))
 
-(defn -main
-  []
-  (let [panel (stack
-               (para "basic para")
-               (flow (button "1" type1-handler)
-                     (button "2" type2-handler :a :s :d :f))
-               (flow (button "3") (button "4")))]
-    (background panel Color/RED)
-    (doto (frame panel :title "demo")
-      (.pack)
-      (.setVisible true)
-      (.setLocationRelativeTo nil))))
-
-(defn progress-example-type1
-  []
-  (dosync (ref-set running true))
-  (let [[pb agent] (progress-bar [:a :b :c :d :e :f :g :h] info " done")
-         stop-button (button "stop")
-         panel (flow pb stop-button)]
-    (doto (frame panel)
-      (.pack)
-      (.setVisible true))
-    (add-action-listener stop-button (fn [_](dosync (ref-set running false))))
-    agent))
-
-(def data (agent 0))
-
-(defn adder
-  [x]
-  (send data + x)
-  {})
-
-(defn progress-example-type2
-  []
-  (dosync (ref-set running true))
-  (let [[pb agent] (progress-bar (range 10 20) adder)
-         stop-button (button "stop")
-         panel (flow pb stop-button)]
-    (doto (frame panel)
-      (.pack)
-      (.setVisible true))
-    (add-action-listener stop-button (fn [_](dosync (ref-set running false))))
-    agent))
-
 ;; can currently only apply a fn if something is chosen. What if I want to run something if cancelled?
 ;; Approach/theme for the library probably should be given a better thought.
 (defn ask-open-dir
@@ -182,40 +126,3 @@
                    (doto pb
                      (.setString "wah")))))
     [pb indeterminate-agent]))
-
-(defn ind-fn
-  [msecs]
-  (Thread/sleep msecs)
-  (range 0 100))
-
-(defn type3
-  []
-  (dosync (ref-set running true))
-  (let [[pb agent] (indeterminate-progress-bar [ind-fn 3000] [info ""])
-         stop-button (button "stop")
-         panel (flow pb stop-button)]
-    (doto (frame panel)
-      (.pack)
-      (.setVisible true))
-    (add-action-listener stop-button (fn [_](dosync (ref-set running false))))
-    agent))
-
-(defn add-progress-listener-example
-  []
-  (dosync (ref-set running true))
-  (let [pb (JProgressBar.)
-        stop-button (button "stop")
-        panel (flow pb stop-button)]
-    (doto (frame panel)
-      (.pack)
-      (.setVisible true))
-    (add-action-listener stop-button (fn [_](dosync (ref-set running false))))
-    (add-progress-listener pb (range 10 20) info "")))
-
-(defn test-all
-  []
-  (-main)
-  (type3)
-  (add-progress-listener-example)
-  (progress-example-type1)
-  (progress-example-type2))
