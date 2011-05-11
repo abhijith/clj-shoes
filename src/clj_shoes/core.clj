@@ -5,7 +5,6 @@
   (:import (java.awt.event MouseAdapter MouseListener KeyEvent))
   (:import (java.awt Toolkit BorderLayout Dimension Color Dialog$ModalityType))
   (:use (clojure.contrib
-         [string :only (as-str)]
          [swing-utils :only (add-action-listener)])))
 
 (defn flow
@@ -51,18 +50,10 @@
      (doto (JFrame. title)
        (.add panel))))
 
-(defn info
-  ([x msg]
-  (JOptionPane/showMessageDialog
-   (JPanel.) (str x msg)))
-  ([msg]
-     (JOptionPane/showMessageDialog
-      (JPanel.) (str msg))))
-
 (defn add-progress-listener
   [pb coll f & args]
   (let [cnt (count coll)
-        task-agent (agent {:start 0 :end cnt :current 0 :element (first coll)})]
+        task-agent (agent {:start 0 :end cnt :current 0 :element (first coll) :running true})]
     (doto pb
       (.setMaximum cnt)
       (.setIndeterminate false)
@@ -75,14 +66,14 @@
                    (.setString (str (:element n))))))
     (letfn [(task-fn
              [agent-val lst task-args]
-             (if (and @running
+             (if (and (:running agent-val)
                       (not (empty? lst)))
                (do
-                 (let [{:keys [current element] :or {current 1 element (first (rest lst))}}
+                 (let [{:keys [current element running] :or {current 1 running true element (first (rest lst))}}
                        (apply f (first lst) task-args)]
                    (Thread/sleep 1000)
                    (send *agent* task-fn (rest lst) task-args)
-                   (assoc (merge-with + agent-val {:current current}) :element element))) agent-val))]
+                   (assoc (merge-with + agent-val {:current current}) :element element :running running))) agent-val))]
       (send task-agent task-fn coll args))
     [pb task-agent]))
 
