@@ -14,9 +14,9 @@
     (doto panel
       (.setComponentOrientation java.awt.ComponentOrientation/RIGHT_TO_LEFT)
       (.setLayout layout))
-    (doseq [x  args]
-      (.add panel x))
-    (.add panel (Box/createHorizontalGlue))
+    (doseq [x args]
+      (.add panel x)
+      (.add panel (Box/createRigidArea (Dimension. 5 0))))
     panel))
 
 (defn stack
@@ -26,7 +26,8 @@
     (doto panel
       (.setLayout layout))
     (doseq [x  args]
-      (.add panel x))
+      (.add panel x)
+      (.add panel (Box/createRigidArea (Dimension. 0 5))))
     panel))
 
 (defn para
