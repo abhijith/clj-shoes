@@ -54,7 +54,7 @@
 (defn add-progress-listener
   [pb coll f & args]
   (let [cnt (count coll)
-        task-agent (agent {:start 0 :end cnt :current 0 :element (first coll) :running true})]
+        task-agent (agent {:start 0 :end cnt :current 0 :element (first coll) :running true :post true})]
     (doto pb
       (.setMaximum cnt)
       (.setIndeterminate false)
@@ -71,11 +71,12 @@
                       (not (empty? lst)))
                (do
                  (let [{:keys [current element running] :or {current 1 running true element (first (rest lst))}}
-                       (apply f (first lst) task-args)]
+                       (apply f agent-val (first lst) task-args)]
                    (Thread/sleep 1000)
                    (send *agent* task-fn (rest lst) task-args)
-                   (assoc (merge-with + agent-val {:current current}) :element element :running running))) agent-val))]
-      (send task-agent task-fn coll args))
+                   (assoc (merge-with + agent-val {:current current}) :element element :running running)))
+               (if (:post agent-val) (apply f agent-val :nil task-args) agent-val)))]
+      (apply send task-agent task-fn coll args))
     [pb task-agent]))
 
 ;; initializer for progress bar? this would probably be required to support (fn [args] ...   {:element "something"})
@@ -103,9 +104,8 @@
        :else :error))))
 
 (defn indeterminate-progress-bar
-  [[indeterminate-fn & indeterminate-args] [determinate-fn & determinate-args]]
-  (let [pb (JProgressBar.)
-        indeterminate-agent (agent nil)]
+  [pb [indeterminate-fn & indeterminate-args] [determinate-fn & determinate-args]]
+  (let [indeterminate-agent (agent nil)]
     (doto pb
       (.setIndeterminate true)
       (.setString "wah")
