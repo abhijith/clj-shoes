@@ -33,7 +33,7 @@
       (.setLocationRelativeTo nil))))
 
 (defn info
-  ([x msg]
+  ([a x msg]
      (if @running
        (JOptionPane/showMessageDialog
         (JPanel.) (str x msg))
@@ -47,7 +47,7 @@
 (defn progress-example-type1
   []
   (dosync (ref-set running true))
-  (let [[pb agent] (progress-bar [:a :b :c :d :e :f :g :h] info " done")
+  (let [[pb agent] (progress-bar [:a :b :c :d :e :f :g :h] info "xx")
          stop-button (button "stop")
          panel (flow pb stop-button)]
     (doto (frame panel)
@@ -59,7 +59,7 @@
 (def data (agent 0))
 
 (defn adder
-  [x]
+  [a x]
   (send data + x)
   (if-not @running {:element "stopped" :running false} {:element "overridden"}))
 
@@ -83,7 +83,7 @@
 (defn progress-example-type3
   []
   (dosync (ref-set running true))
-  (let [[pb agent] (indeterminate-progress-bar [ind-fn 3000] [info ""])
+  (let [[pb agent] (indeterminate-progress-bar (JProgressBar.) [ind-fn 3000] [info ""])
          stop-button (button "stop")
          panel (flow pb stop-button)]
     (doto (frame panel)
