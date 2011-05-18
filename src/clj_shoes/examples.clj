@@ -47,7 +47,7 @@
 (defn progress-example-type1
   []
   (dosync (ref-set running true))
-  (let [[pb agent] (progress-bar [:a :b :c :d :e :f :g :h] info "x")
+  (let [[pb agent] (progress-bar [:a :b :c :d :e :f :g :h] info "xx")
          stop-button (button "stop")
          panel (flow pb stop-button)]
     (doto (frame panel)
