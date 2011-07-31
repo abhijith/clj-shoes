@@ -119,44 +119,6 @@
                      (.setString "wah")))))
     [pb indeterminate-agent]))
 
-;; initializer for data
-;; destructure update-fn value like in progressbar code and set default values.
-(defn add-table-listener
-  [tbl cols [update-fn & update-args] [listener-fn & listener-args]]
-  (let [table (agent {:cols cols :data (apply update-fn update-args)})
-        table-model (proxy [AbstractTableModel] []
-                      (getColumnCount []    (count (:cols @table)))
-                      (getRowCount    []    (count (:data @table)))
-                      (getValueAt     [i j] (get-in (:data @table) [i j]))
-                      (getColumnName  [i]   ((:cols @table) i))) ]
-    (.setModel tbl table-model)
-    (add-watch table :table (fn [k r o n] (apply listener-fn n listener-args)))
-    tbl))
-
-(def my-table-model
-  (let [ column-names ["File" "Ranking" ]
-	 column-data  [["a.txt" 10] ["b.txt" 2]]
-	 row-count 5 ]
-    (proxy [AbstractTableModel] []
-      (getColumnCount [] (count column-names))
-      (getRowCount [] row-count)
-      (getValueAt [i j] (get-in column-data [i j]))
-      (getColumnName [i] (column-names i)))))
-
-(defn dynamic-non-editable-table
-  []
-  (let [table (JTable.)
-        panel (JPanel.)
-        tbl (add-table-listener table ["a" "b"] [(fn [& args] [[1 :a][2 :b]])] [(fn [ & args] [[1][2][3]])])
-        scroll (JScrollPane. tbl)]
-    (.add panel scroll)
-    (doto (JFrame.)
-      (.add panel)
-      (.setLocation 300 180)
-      (.setResizable false)
-      (.pack)
-      (.setVisible true))))
-
 (defn table
   [cols [init-fn & init-args] [listener-fn & listener-args]]
   (let [table (agent {:cols cols :data (apply init-fn init-args)})
@@ -168,21 +130,3 @@
         tbl (JTable. table-model)]
     (add-watch table :table (fn [k r o n] (apply listener-fn table-model listener-args)))
     {:table tbl :model table}))
-
-
-(defn dynamic-non-editable-table
-  []
-  (let [panel (JPanel.)
-        {tbl :table model :model} (table ["a" "b"]
-                                         [(fn [& args] [[1 :a][2 :b]])]
-                                         [(fn [x] (.fireTableRowsInserted x 0 0))])
-        
-        scroll (JScrollPane. tbl)]
-    (.add panel scroll)
-    (doto (JFrame.)
-      (.add panel)
-      (.setLocation 300 180)
-      (.setResizable false)
-      (.pack)
-      (.setVisible true))
-  model))

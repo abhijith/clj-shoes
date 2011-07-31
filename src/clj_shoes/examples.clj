@@ -3,7 +3,7 @@
   (:use (clojure.contrib
          [swing-utils :only (add-action-listener)]
          [string :only (as-str)]))
-  (:import (javax.swing JOptionPane JPanel JProgressBar)
+  (:import (javax.swing JOptionPane JPanel JProgressBar JScrollPane)
            (java.awt Color)))
 
 (def running (ref true))
@@ -103,3 +103,22 @@
       (.setVisible true))
     (add-action-listener stop-button (fn [_](dosync (ref-set running false))))
     (add-progress-listener pb (range 10 20) info "")))
+
+
+(defn table-example
+  []
+  (let [panel (JPanel.)
+        {tbl :table model :model} (table ["a" "b"]
+                                         [(fn [& args] [[1 :a][2 :b]])]
+                                         [(fn [x] (.fireTableRowsInserted x 0 0))])
+        
+        scroll (JScrollPane. tbl)]
+    (.add panel scroll)
+    (doto (frame panel)
+      (.setLocation 300 180)
+      (.setResizable false)
+      (.pack)
+      (.setVisible true))
+  model))
+
+(def tbl-model (table-example))
