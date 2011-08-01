@@ -120,13 +120,13 @@
     [pb indeterminate-agent]))
 
 (defn table
-  [cols [init-fn & init-args] [listener-fn & listener-args]]
-  (let [table (agent {:cols cols :data (apply init-fn init-args)})
+  [& {:keys [cols data listener-fn] :or {cols [] data [] listener-fn (fn [x] nil)}}]
+  (let [table (agent {:cols cols :data data})
         table-model (proxy [AbstractTableModel] []
                       (getColumnCount []    (count (:cols @table)))
                       (getRowCount    []    (count (:data @table)))
                       (getValueAt     [i j] (get-in (:data @table) [i j]))
                       (getColumnName  [i]   ((:cols @table) i)))
         tbl (JTable. table-model)]
-    (add-watch table :table (fn [k r o n] (apply listener-fn table-model listener-args)))
+    (add-watch table :table (fn [k r o n] (listener-fn table-model)))
     {:table tbl :model table}))

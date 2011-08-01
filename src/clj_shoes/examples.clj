@@ -104,17 +104,16 @@
     (add-action-listener stop-button (fn [_](dosync (ref-set running false))))
     (add-progress-listener pb (range 10 20) info "")))
 
-
 (defn table-example
   []
   (let [panel (JPanel.)
-        {tbl :table model :model} (table ["a" "b"]
-                                         [(fn [& args] [[1 :a][2 :b]])]
-                                         [(fn [x] (.fireTableRowsInserted x 0 0))])
+        {tbl :table model :model} (table :cols ["a" "b"]
+                                         :data [[1 :a][2 :b]]
+                                         :listener-fn (fn [tbl-model] (.fireTableRowsInserted tbl-model 0 0)))
         
         scroll (JScrollPane. tbl)]
     (.add panel scroll)
-    (doto (frame panel)
+    (doto (frame panel :title "wah!")
       (.setLocation 300 180)
       (.setResizable false)
       (.pack)
@@ -122,3 +121,4 @@
   model))
 
 (def tbl-model (table-example))
+(send tbl-model (fn [a] (Thread/sleep 3000) (update-in a [:data] conj [:x :y])))
