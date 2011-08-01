@@ -47,7 +47,7 @@
      (JButton. label)))
 
 (defn frame
-  ([panel & [{:keys [title] :or {title "woah!"}}]]
+  ([panel & {:keys [title] :or {title "woah!"}}]
      (doto (JFrame. title)
        (.add panel))))
 
